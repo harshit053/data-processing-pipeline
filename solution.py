@@ -1,20 +1,21 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import *
-from pyspark.sql.window import Window
 
-from utils import *
+from utils import load_state_map, merge_dataframes, replace_company_id, standardize_df, validate_df
+
 
 def solution():
     # Creating a Spark Session
-    spark = SparkSession.builder \
-        .appName("PySpark App") \
-        .getOrCreate()
+    spark = SparkSession.builder.appName("PySpark App").getOrCreate()
 
     # Creating unity_golf_club dataframe
-    unity_golf_club_df = spark.read.csv("unity_golf_club.csv", header=True, inferSchema=True)
+    unity_golf_club_df = spark.read.csv(
+        "unity_golf_club.csv", header=True, inferSchema=True
+    )
 
     # Creating us_softball_league dataframe
-    us_softball_league_df = spark.read.csv("us_softball_league.tsv", sep = '\t', header=True, inferSchema=True)
+    us_softball_league_df = spark.read.csv(
+        "us_softball_league.tsv", sep="\t", header=True, inferSchema=True
+    )
 
     # Creating companies dataframe
     companies_df = spark.read.csv("companies.csv", header=True, inferSchema=True)
@@ -35,6 +36,7 @@ def solution():
 
     # Stop the SparkSession
     spark.stop()
+
 
 if __name__ == "__main__":
 
