@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 
 from utils import load_state_map, merge_dataframes, replace_company_id, standardize_df, validate_df
+from data_ingestion import create_db_and_table, write_partition_to_sqlite
 
 
 def solution():
@@ -33,6 +34,16 @@ def solution():
     valid_df.show()
 
     suspect_df.show()
+
+    output_dir_valid = "records/valid_values"
+    output_dir_suspect = "records/suspect_values"
+    valid_df.write.option("header", "true").csv(output_dir_valid, mode="overwrite")
+    suspect_df.write.option("header", "true").csv(output_dir_suspect, mode="overwrite")
+
+    # Create the database and table before processing the data
+    create_db_and_table()
+
+    valid_df.rdd.foreachPartition(write_partition_to_sqlite)
 
     # Stop the SparkSession
     spark.stop()

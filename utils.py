@@ -55,8 +55,9 @@ def merge_dataframes(df1, df2):
 def replace_company_id(df1, df2):
     df2 = broadcast(df2)
     df = df1.join(df2, df1.company_id == df2.id, "left")
-    df = df.drop("company_id", "id")
-    df = df.withColumn("id", row_number().over(Window.orderBy("member_since")))
+    df = df.drop("company_id", "id") \
+           .withColumnRenamed("name", "company_name") \
+           .withColumn("id", row_number().over(Window.orderBy("member_since")))
     return df
 
 
