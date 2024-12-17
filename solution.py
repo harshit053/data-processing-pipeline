@@ -34,8 +34,14 @@ def merge_dataframes(df1, df2):
 
     df = df1.unionAll(df2)
 
-    df = df.withColumn("id", row_number().over(Window.orderBy("member_since")))
+    return df
 
+def replace_company_id(df1, df2):
+
+    df2 = broadcast(df2)
+    df = df1.join(df2, df1.company_id == df2.id, 'left')
+    df = df.drop("company_id", "id")
+    df = df.withColumn("id", row_number().over(Window.orderBy("member_since")))
     return df
 
 if __name__ == "__main__":
@@ -51,6 +57,9 @@ if __name__ == "__main__":
     # Creating us_softball_league dataframe
     us_softball_league_df = spark.read.csv("us_softball_league.tsv", sep = '\t', header=True, inferSchema=True)
 
+    # Creating companies dataframe
+    companies_df = spark.read.csv("companies.csv", header=True, inferSchema=True)
+
     with open("us_state_abbr.json", "r") as file:
         us_state_abbr = json.load(file)
     state_map = create_map([lit(k) for k_v in us_state_abbr.items() for k in k_v])
@@ -61,7 +70,10 @@ if __name__ == "__main__":
     # Data Munging - step 2
     combined_df = merge_dataframes(std_us_softball_league_df, unity_golf_club_df)
 
-    combined_df.show()
+    # Data Munging - step 3
+    final_df = replace_company_id(combined_df, companies_df)
+
+    final_df.show(50)
 
     # Stop the SparkSession
     spark.stop()
