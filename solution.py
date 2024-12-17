@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
+from pyspark.sql.window import Window
 import json
 
 # Standardizing us_softball_league dataframe
@@ -27,6 +28,16 @@ def standardize_df(df, state_map):
     )
     return df
 
+def merge_dataframes(df1, df2):
+    df1.withColumn("source", lit("US Softball League"))
+    df2.withColumn("source", lit("Unity Golf Club"))
+
+    df = df1.unionAll(df2)
+
+    df = df.withColumn("id", row_number().over(Window.orderBy("member_since")))
+
+    return df
+
 if __name__ == "__main__":
 
     # Creating a Spark Session
@@ -44,9 +55,13 @@ if __name__ == "__main__":
         us_state_abbr = json.load(file)
     state_map = create_map([lit(k) for k_v in us_state_abbr.items() for k in k_v])
 
+    # Data Munging - step 1
     std_us_softball_league_df = standardize_df(us_softball_league_df, state_map)
 
-    std_us_softball_league_df.show()
+    # Data Munging - step 2
+    combined_df = merge_dataframes(std_us_softball_league_df, unity_golf_club_df)
+
+    combined_df.show()
 
     # Stop the SparkSession
     spark.stop()
