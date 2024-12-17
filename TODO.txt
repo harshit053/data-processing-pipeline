@@ -1,0 +1,20 @@
+# TODO
+1. Data Validation:
+   - Adding null checks to each columns to avoid incorrect reults or errors in downstream.
+
+2. Performance:
+   - Use partitioning to improve performance during the merge operation.
+   - Optimize data writes for large-scale data ingestion by using optimized file formats like Parquet.
+
+2. Enhancements:
+   - Add logging for each step in data processing.
+   - Add support for additional input file formats (e.g., JSON, Parquet).
+
+3. Database:
+   - Replace SQLite with PostgreSQL for better scalability.
+   - Add indexing on columns for faster queries by creating indexes on commonly queried columns after data ingestion. 
+
+## Remaining Work
+1. Testing:
+   - Add integration tests for database ingestion.
+   - Add unit tests for utility functions using PySpark SQL.
