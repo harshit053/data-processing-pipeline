@@ -44,11 +44,35 @@ def replace_company_id(df1, df2):
     df = df.withColumn("id", row_number().over(Window.orderBy("member_since")))
     return df
 
+def validate_df(df):
+    df = (df
+            .withColumn("dob", to_date(col("dob"), "yyyy/MM/dd"))
+            .withColumn("last_active", to_date(col("last_active"), "yyyy/MM/dd"))
+            .withColumn("suspect_record", 
+                         when(
+                            (col("dob") > current_date()) |
+                            (col("last_active") > current_date()) |
+                            (col("member_since") > year(current_date())) |
+                            (year(col("dob")) > col("member_since")) |
+                            (col("member_since") > year(col("last_active"))) |
+                            col("dob").isNull() |
+                            col("last_active").isNull() |
+                            col("member_since").isNull(), 1
+                         ).otherwise(0) 
+                        )
+    )
+
+    suspect_df = df.filter(col("suspect_record") == 1).drop("suspect_record")
+    valid_df = df.filter(col("suspect_record") == 0).drop("suspect_record")
+
+    return suspect_df, valid_df
+
+
 if __name__ == "__main__":
 
     # Creating a Spark Session
     spark = SparkSession.builder \
-        .appName("PySpark Example App") \
+        .appName("PySpark App") \
         .getOrCreate()
 
     # Creating unity_golf_club dataframe
@@ -71,9 +95,14 @@ if __name__ == "__main__":
     combined_df = merge_dataframes(std_us_softball_league_df, unity_golf_club_df)
 
     # Data Munging - step 3
-    final_df = replace_company_id(combined_df, companies_df)
+    combined_df = replace_company_id(combined_df, companies_df)
 
-    final_df.show(50)
+    # Data Munging - step 4
+    suspect_df, valid_df = validate_df(combined_df)
+
+    valid_df.show()
+
+    suspect_df.show()
 
     # Stop the SparkSession
     spark.stop()
