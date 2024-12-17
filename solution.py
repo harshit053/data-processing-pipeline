@@ -1,5 +1,31 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
+import json
+
+# Standardizing us_softball_league dataframe
+def standardize_df(df, state_map):
+    nameArr = split(df.name, " ")
+    df = (df
+            # Split full names into first_name and last_name
+            .withColumn("first_name", nameArr.getItem(0)) 
+            .withColumn("last_name", nameArr.getItem(1))
+            .drop("name")
+
+            # Change format of dates
+            .withColumn("date_of_birth", to_date(col("date_of_birth"), "MM/dd/yyyy"))
+            .withColumn("dob", date_format(col("date_of_birth"), "yyyy/MM/dd"))
+            .drop("date_of_birth")
+            .withColumn("last_active", to_date(col("last_active"), "MM/dd/yyyy"))
+            .withColumn("last_active", date_format(col("last_active"), "yyyy/MM/dd"))
+
+            # Replace state names with abbreviation
+            .withColumn("state", state_map[col("us_state")])
+            .drop("us_state")
+
+            .withColumnRenamed("joined_league", "member_since")
+            .select("first_name", "last_name", "dob", "company_id", "last_active", "score", "member_since", "state")
+    )
+    return df
 
 if __name__ == "__main__":
 
@@ -13,6 +39,14 @@ if __name__ == "__main__":
 
     # Creating us_softball_league dataframe
     us_softball_league_df = spark.read.csv("us_softball_league.tsv", sep = '\t', header=True, inferSchema=True)
+
+    with open("us_state_abbr.json", "r") as file:
+        us_state_abbr = json.load(file)
+    state_map = create_map([lit(k) for k_v in us_state_abbr.items() for k in k_v])
+
+    std_us_softball_league_df = standardize_df(us_softball_league_df, state_map)
+
+    std_us_softball_league_df.show()
 
     # Stop the SparkSession
     spark.stop()
