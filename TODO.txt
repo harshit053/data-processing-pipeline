@@ -1,3 +1,6 @@
+solution.py has the main function.
+Run the code by using the command spark-submit solution.py after installing the dependencies from requirements.txt
+
 # TODO
 1. Data Validation:
    - Adding null checks to each columns to avoid incorrect reults or errors in downstream.
